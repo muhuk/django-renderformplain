@@ -1,17 +1,13 @@
 from django.test import TestCase
 from django import forms
+from django import template
 from utils import get_field_display, get_field_data, get_choice
 
 
-class FieldValueTestCase(TestCase):
+class BaseTestCase(TestCase):
     choices = (('X', u'xxx'),
                ('Y', u'yyy'),
                ('Z', u'zzz'))
-
-    msg_field_data = 'get_field_data failed for %sform boolean field with ' \
-                     '`%s` value.'
-    msg_field_display = 'get_field_display failed for %sform boolean field' \
-                        ' with `%s` value.'
 
     def _test_form(self):
         class TestForm(forms.Form):
@@ -21,6 +17,13 @@ class FieldValueTestCase(TestCase):
             date_field = forms.DateField()
             integer_field = forms.IntegerField()
         return TestForm
+
+
+class FieldValueTestCase(BaseTestCase):
+    msg_field_data = 'get_field_data failed for %sform boolean field with ' \
+                     '`%s` value.'
+    msg_field_display = 'get_field_display failed for %sform boolean field' \
+                        ' with `%s` value.'
 
     def test_boolean_field(self):
         for value in (True, False):
@@ -39,7 +42,6 @@ class FieldValueTestCase(TestCase):
 
     def test_char_field(self):
         value = u'\u011e\xdc\u015e\u0130\xd6\xc7' # GUSIOC with accents
-
         for kwarg in ('initial', 'data'):
             form = self._test_form()(**{kwarg: {'char_field': value}})
             self.assertEqual(get_field_data(form['char_field']),
@@ -101,3 +103,20 @@ class FieldValueTestCase(TestCase):
                              value,
                              self.msg_field_display % (
                                  form.is_bound and 'bound ' or '', str(value)))
+
+
+class TagsAndFiltersTestCase(BaseTestCase):
+    base_template = u'{%% load renderformplain_tags %%}\n\n%s\n'
+
+    def test_data_filter(self):
+        value_dict = {'char_field': u'Abc',
+                      'integer_field': 404}
+        tmpl = self.base_template % u'{{ form.char_field|data }}' \
+                                    u' {{ form.integer_field|data }}'
+        tmpl = template.Template(tmpl)
+        for kwarg in ('initial', 'data'):
+            form = self._test_form()(**{kwarg: value_dict})
+            context = template.Context({'form': form})
+            result = tmpl.render(context)
+            for value in value_dict.values():
+                self.assert_(unicode(value) in result)
