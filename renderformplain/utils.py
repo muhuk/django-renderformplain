@@ -12,7 +12,8 @@ def get_field_display(field):
             return get_choice(field.field.widget.choices, data)
         else:
             return data
-    raise ValueError
+    raise ValueError('field must be a BoundField instance. Got %s instead' % \
+                                                                  type(field))
 
 
 def get_field_data(field):
@@ -48,6 +49,3 @@ def get_choice(choices, key):
         if choice[0] == key:
             return choice[1]
     return key
-
-
-
