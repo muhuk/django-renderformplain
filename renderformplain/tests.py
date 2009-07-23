@@ -109,14 +109,24 @@ class TagsAndFiltersTestCase(BaseTestCase):
     base_template = u'{%% load renderformplain_tags %%}\n\n%s\n'
 
     def test_data_filter(self):
-        value_dict = {'char_field': u'Abc',
-                      'integer_field': 404}
-        tmpl = self.base_template % u'{{ form.char_field|data }}' \
-                                    u' {{ form.integer_field|data }}'
+        value_dict = {'boolean_field': False,
+                      'char_field': u'Abc',
+                      'choice_field': 'Y',
+                      'integer_field': 404,
+                      'date_field': '2005-02-18'}
+        tmpl = self.base_template % u'{{ form.boolean_field|data }}' \
+                                    u' {{ form.char_field|data }}' \
+                                    u' {{ form.choice_field|data }}' \
+                                    u' {{ form.integer_field|data }}' \
+                                    u' {{ form.date_field|data }}'
         tmpl = template.Template(tmpl)
         for kwarg in ('initial', 'data'):
             form = self._test_form()(**{kwarg: value_dict})
             context = template.Context({'form': form})
             result = tmpl.render(context)
-            for value in value_dict.values():
-                self.assert_(unicode(value) in result)
+            for value in (u'type="checkbox"',
+                          u'Abc',
+                          u'yyy',
+                          u'404',
+                          u'18.02.2005'):
+                self.assert_(value in result)
