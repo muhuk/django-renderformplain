@@ -1,8 +1,16 @@
+from copy import deepcopy
 from django.forms.forms import BoundField
 from django.forms.widgets import Widget
 from django.forms.util import flatatt
 from django.utils.safestring import mark_safe
 from utils import render_field
+
+
+def convert_to_plainform(form):
+    new_form = deepcopy(form)
+    for field_name, field in new_form.fields.items():
+        field.widget = PlainTextWidget(form, field_name)
+    return new_form
 
 
 class PlainTextWidget(Widget):

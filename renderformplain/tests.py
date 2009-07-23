@@ -137,17 +137,13 @@ class PlainTextWidgetTestCase(BaseTestCase):
 class TagsAndFiltersTestCase(BaseTestCase):
     base_template = u'{%% load renderformplain_tags %%}\n\n%s\n'
 
-    def test_data_filter(self):
+    def _render_test_template(self, tmpl):
         value_dict = {'boolean_field': False,
-                      'char_field': u'Abc',
-                      'choice_field': 'Y',
-                      'integer_field': 404,
-                      'date_field': '2005-02-18'}
-        tmpl = self.base_template % u'{{ form.boolean_field|data }}' \
-                                    u' {{ form.char_field|data }}' \
-                                    u' {{ form.choice_field|data }}' \
-                                    u' {{ form.integer_field|data }}' \
-                                    u' {{ form.date_field|data }}'
+                    'char_field': u'Abc',
+                    'choice_field': 'Y',
+                    'integer_field': 404,
+                    'date_field': '2005-02-18'}
+
         tmpl = template.Template(tmpl)
         for kwarg in ('initial', 'data'):
             form = self._test_form()(**{kwarg: value_dict})
@@ -159,3 +155,16 @@ class TagsAndFiltersTestCase(BaseTestCase):
                           u'404',
                           u'18.02.2005'):
                 self.assert_(value in result)
+
+    def test_data_filter(self):
+        tmpl = self.base_template % u'{{ form.boolean_field|data }}' \
+                                    u' {{ form.char_field|data }}' \
+                                    u' {{ form.choice_field|data }}' \
+                                    u' {{ form.integer_field|data }}' \
+                                    u' {{ form.date_field|data }}'
+        self._render_test_template(tmpl)
+
+    def test_plainform_tag(self):
+        tmpl = self.base_template % u'{% plainform form as plain_form %}' \
+                                    u' {{ plain_form.as_p }}'
+        self._render_test_template(tmpl)
