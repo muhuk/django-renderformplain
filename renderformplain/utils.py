@@ -1,7 +1,7 @@
 import datetime
 from django.forms.forms import BoundField
-from django.forms import ValidationError
-from django.forms import CheckboxInput, DateField, DateTimeField, TimeField
+from django.forms import ValidationError, CheckboxInput
+from django.forms import BooleanField, DateField, DateTimeField, TimeField
 from django.template.defaultfilters import date, time
 from django.utils.translation import ugettext as _
 from django.utils.html import escape
@@ -15,8 +15,8 @@ def get_field_display(field):
     """
     if isinstance(field, BoundField):
         data = get_field_data(field)
-        if hasattr(field.field.widget, 'choices'):
-            return get_choice(field.field.widget.choices, data)
+        if hasattr(field.field, 'choices'):
+            return get_choice(field.field.choices, data)
         else:
             return data
     raise ValueError('field must be a BoundField instance. Got %s instead' % \
@@ -60,6 +60,8 @@ def get_choice(choices, key):
 
 def render_field(field, empty_value=_(u'-- undefined --'), value=None):
     value = value or get_field_display(field)
+    if value is None or value == u'':
+        return empty_value
     # Try to validate value to get internal Python types.
     # We need this to check if we can apply special formatting.
     if not hasattr(field.field, 'choices'):
@@ -67,13 +69,10 @@ def render_field(field, empty_value=_(u'-- undefined --'), value=None):
             value = field.field.clean(value)
         except ValidationError:
             pass
-    if value is None or value == u'':
-        return empty_value
     # We don't want to print True or False in case of a CheckBox widget.
-    elif isinstance(field.field.widget, CheckboxInput):
-        return field.field.widget.render(field.name,
-                                         value,
-                                         attrs={'readonly': True})
+    if isinstance(field.field, BooleanField):
+        return CheckboxInput(field.field.widget.attrs).render(field.name,
+                                              value, attrs={'readonly': True})
     # Format dates and times nicely.
     elif isinstance(field.field, DateField) and isinstance(value,
                                                                datetime.date):

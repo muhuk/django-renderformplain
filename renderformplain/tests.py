@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django import forms
 from django import template
+from forms import PlainTextWidget
 from utils import get_field_display, get_field_data, get_choice
 
 
@@ -103,6 +104,34 @@ class FieldValueTestCase(BaseTestCase):
                              value,
                              self.msg_field_display % (
                                  form.is_bound and 'bound ' or '', str(value)))
+
+
+class PlainTextWidgetTestCase(BaseTestCase):
+    def test_widget(self):
+        value_dict = {'boolean_field': True,
+                      'char_field': u'XYZ',
+                      'choice_field': 'Z',
+                      'integer_field': 42,
+                      'date_field': '1980-05-20'}
+        form = self._test_form()(value_dict)
+        bound_fields = {}
+        for field_name, field in form.fields.items():
+            field.widget = PlainTextWidget(form, field_name)
+            bound_fields[field_name] = forms.forms.BoundField(form,
+                                                              field,
+                                                              field_name)
+        self.assertEqual(unicode(bound_fields['boolean_field']),
+                         u'<span id="id_boolean_field"><input checked="' \
+                         u'checked" readonly="True" type="checkbox"' \
+                         u' name="boolean_field" /></span>')
+        self.assertEqual(unicode(bound_fields['char_field']),
+                         u'<span id="id_char_field">XYZ</span>')
+        self.assertEqual(unicode(bound_fields['choice_field']),
+                         u'<span id="id_choice_field">zzz</span>')
+        self.assertEqual(unicode(bound_fields['integer_field']),
+                         u'<span id="id_integer_field">42</span>')
+        self.assertEqual(unicode(bound_fields['date_field']),
+                         u'<span id="id_date_field">20.05.1980</span>')
 
 
 class TagsAndFiltersTestCase(BaseTestCase):
